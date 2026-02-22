@@ -1,0 +1,11 @@
+{
+  "name": "Component Properties Documentation",
+  "id": "1607486611169964823",
+  "api": "1.0.0",
+  "main": "code.js",
+  "editorType": ["figma"],
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": ["none"]
+  }
+}

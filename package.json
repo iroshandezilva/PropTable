@@ -1,0 +1,13 @@
+{
+  "name": "component-properties-documentation",
+  "version": "1.0.0",
+  "description": "Figma plugin to generate component property documentation tables",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "@figma/plugin-typings": "^1.100.0"
+  }
+}
