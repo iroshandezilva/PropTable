@@ -1,7 +1,9 @@
 {
-  "name": "component-properties-documentation",
+  "name": "proptable",
   "version": "1.0.0",
-  "description": "Figma plugin to generate component property documentation tables",
+  "description": "Figma plugin that generates component property tables on the canvas",
+  "license": "MIT",
+  "repository": "github:iroshandezilva/PropTable",
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch"

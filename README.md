@@ -35,3 +35,7 @@ All the plugin code is in [`code.ts`](code.ts), which compiles to `code.js`.
 Built by [Iroshan De Zilva](https://github.com/iroshandezilva) and Thinuka De Mel. Inspired by Matt Rea's *Component Properties Documentation* file on Figma Community.
 
 Questions or feedback: hello@iroshandezilva.com, or [open an issue](https://github.com/iroshandezilva/PropTable/issues).
+
+## License
+
+[MIT](LICENSE)

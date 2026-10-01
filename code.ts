@@ -1,5 +1,5 @@
 // ============================================================
-// Component Properties Documentation — Figma Plugin
+// PropTable — Figma Plugin
 // Generates a property table on the canvas for the selected component
 // ============================================================
 
@@ -45,45 +45,20 @@ interface ParsedProperty {
 
 // --- Entry point ---
 
+// Plugin data keys
+const TABLE_ID_KEY = "propTableId"; // on the component: ID of its table
+const SOURCE_ID_KEY = "sourceComponentId"; // on the table: ID of its component
+
+class UserError extends Error {}
+
 async function main() {
   const selection = figma.currentPage.selection;
 
   if (selection.length !== 1) {
-    figma.notify("Please select a single component, component set, or instance.");
-    figma.closePlugin();
-    return;
+    throw new UserError("Please select a single component, component set, or instance.");
   }
 
-  const node = selection[0];
-  let targetNode: ComponentNode | ComponentSetNode;
-  let positionRef: SceneNode = node;
-
-  if (node.type === "COMPONENT_SET") {
-    targetNode = node;
-  } else if (node.type === "COMPONENT") {
-    // If component is inside a component set, use the set
-    targetNode =
-      node.parent?.type === "COMPONENT_SET"
-        ? (node.parent as ComponentSetNode)
-        : node;
-    positionRef = targetNode;
-  } else if (node.type === "INSTANCE") {
-    const mainComp = (node as InstanceNode).mainComponent;
-    if (!mainComp) {
-      figma.notify("Could not resolve instance to its main component.");
-      figma.closePlugin();
-      return;
-    }
-    targetNode =
-      mainComp.parent?.type === "COMPONENT_SET"
-        ? (mainComp.parent as ComponentSetNode)
-        : mainComp;
-    positionRef = node;
-  } else {
-    figma.notify("Please select a component, component set, or instance.");
-    figma.closePlugin();
-    return;
-  }
+  const { targetNode, positionRef } = await resolveTarget(selection[0]);
 
   // Load fonts
   await Promise.all([
@@ -101,17 +76,14 @@ async function main() {
   const docLink = docLinks.length > 0 ? docLinks[0].uri : "";
 
   // Check for existing table
-  const existingTableId = targetNode.getPluginData("propTableId");
+  const existingTable = await findExistingTable(targetNode);
   let oldX: number | null = null;
   let oldY: number | null = null;
 
-  if (existingTableId) {
-    const existingNode = await figma.getNodeByIdAsync(existingTableId);
-    if (existingNode && existingNode.type === "FRAME") {
-      oldX = (existingNode as FrameNode).x;
-      oldY = (existingNode as FrameNode).y;
-      (existingNode as FrameNode).remove();
-    }
+  if (existingTable) {
+    oldX = existingTable.x;
+    oldY = existingTable.y;
+    existingTable.remove();
   }
 
   // Build table
@@ -128,15 +100,85 @@ async function main() {
 
   figma.currentPage.appendChild(table);
 
-  // Store table ID on the component for future updates
-  targetNode.setPluginData("propTableId", table.id);
+  // Link table and component for future updates. Library (remote) components
+  // are read-only, so the table-side link is the one we can always rely on.
+  table.setPluginData(SOURCE_ID_KEY, targetNode.id);
+  if (!targetNode.remote) {
+    targetNode.setPluginData(TABLE_ID_KEY, table.id);
+  }
 
   figma.currentPage.selection = [table];
   figma.viewport.scrollAndZoomIntoView([table]);
 
   const isUpdate = oldX !== null;
   figma.notify(isUpdate ? "✓ Documentation table updated!" : "✓ Documentation table created!");
-  figma.closePlugin();
+}
+
+// --- Selection resolution ---
+
+async function resolveTarget(
+  node: SceneNode
+): Promise<{ targetNode: ComponentNode | ComponentSetNode; positionRef: SceneNode }> {
+  // A generated table (or something inside one) is selected: update its component
+  const tableNode = findTableAncestor(node);
+  if (tableNode) {
+    const sourceId = tableNode.getPluginData(SOURCE_ID_KEY);
+    const source = await figma.getNodeByIdAsync(sourceId);
+    if (!source || (source.type !== "COMPONENT" && source.type !== "COMPONENT_SET")) {
+      throw new UserError("The component for this table could not be found.");
+    }
+    return { targetNode: source, positionRef: tableNode };
+  }
+
+  if (node.type === "COMPONENT_SET") {
+    return { targetNode: node, positionRef: node };
+  }
+
+  if (node.type === "COMPONENT") {
+    // If component is inside a component set, use the set
+    const targetNode = node.parent?.type === "COMPONENT_SET" ? node.parent : node;
+    return { targetNode, positionRef: targetNode };
+  }
+
+  if (node.type === "INSTANCE") {
+    const mainComp = await node.getMainComponentAsync();
+    if (!mainComp) {
+      throw new UserError("Could not resolve instance to its main component.");
+    }
+    const targetNode = mainComp.parent?.type === "COMPONENT_SET" ? mainComp.parent : mainComp;
+    return { targetNode, positionRef: node };
+  }
+
+  throw new UserError("Please select a component, component set, or instance.");
+}
+
+/** Walk up from the node to find a table generated by this plugin. */
+function findTableAncestor(node: BaseNode): FrameNode | null {
+  let current: BaseNode | null = node;
+  while (current && current.type !== "PAGE" && current.type !== "DOCUMENT") {
+    if (current.type === "FRAME" && current.getPluginData(SOURCE_ID_KEY)) {
+      return current;
+    }
+    current = current.parent;
+  }
+  return null;
+}
+
+async function findExistingTable(
+  targetNode: ComponentNode | ComponentSetNode
+): Promise<FrameNode | null> {
+  // Fast path: the component remembers its table (local components only)
+  const tableId = targetNode.getPluginData(TABLE_ID_KEY);
+  if (tableId) {
+    const node = await figma.getNodeByIdAsync(tableId);
+    if (node && node.type === "FRAME" && !node.removed) return node;
+  }
+
+  // Fallback: look for a table on this page that points back at the component
+  const match = figma.currentPage.findChild(
+    (n) => n.type === "FRAME" && n.getPluginData(SOURCE_ID_KEY) === targetNode.id
+  );
+  return match as FrameNode | null;
 }
 
 // --- Read component properties ---
@@ -523,8 +565,14 @@ async function renderInstanceSwap(cell: FrameNode, prop: ParsedProperty): Promis
   name.fontName = FONT_REGULAR;
   const defaultStr = String(prop.defaultValue);
   // Instance swap default value is a node ID — resolve to component name
-  const resolvedNode = await figma.getNodeByIdAsync(defaultStr);
-  name.characters = resolvedNode ? resolvedNode.name : defaultStr;
+  // Library components may not resolve locally; avoid showing a raw node ID
+  let resolvedNode: BaseNode | null = null;
+  try {
+    resolvedNode = await figma.getNodeByIdAsync(defaultStr);
+  } catch {
+    resolvedNode = null;
+  }
+  name.characters = resolvedNode ? resolvedNode.name : "Library component";
   name.fontSize = 14;
   name.lineHeight = { value: 22, unit: "PIXELS" };
   name.fills = [{ type: "SOLID", color: COLORS.TEXT_PRIMARY }];
@@ -698,4 +746,14 @@ function getTypeLabel(type: ParsedProperty["type"]): string {
 }
 
 // --- Run ---
-main();
+main()
+  .catch((err) => {
+    if (err instanceof UserError) {
+      figma.notify(err.message);
+    } else {
+      console.error(err);
+      const message = err instanceof Error ? err.message : String(err);
+      figma.notify(`PropTable failed: ${message}`, { error: true });
+    }
+  })
+  .then(() => figma.closePlugin());
