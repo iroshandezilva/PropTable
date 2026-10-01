@@ -34,9 +34,10 @@ Automated checks: `npm test` (model logic) and `npm run typecheck`.
 ## Window (Open PropTable…)
 
 - [ ] Export tab: Markdown, JSON and TypeScript all render for the selection; Copy shows a "Copied" toast and pastes correctly
-- [ ] Several components selected: Component dropdown switches between them
+- [ ] Several components selected: the component dropdown opens and closes with a click, outside click, Escape and the arrow keys, and switches between them
 - [ ] Checks tab: Selection and Page scopes list issues; clicking one selects the component
-- [ ] Settings tab: each toggle, theme, accent, font, placement and type order change the next generated table
+- [ ] Settings tab: each toggle, theme, accent (presets and custom colour), font, placement and property order change the next generated table; turning Variants off disables Variant previews
+- [ ] Window follows Figma's light and dark theme; motion is off when the OS asks for reduced motion
 - [ ] Unknown font: table uses Inter and the toast says so
 - [ ] Reset to defaults restores everything
 

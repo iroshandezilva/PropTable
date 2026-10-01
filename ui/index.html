@@ -2,87 +2,150 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>/*__CSS__*/</style>
 </head>
 <body>
-  <nav class="tabs" role="tablist">
-    <button role="tab" data-tab="export" aria-selected="true">Export</button>
-    <button role="tab" data-tab="checks">Checks</button>
-    <button role="tab" data-tab="settings" id="settings-tab">Settings</button>
+<div class="app">
+  <nav class="tabs" role="tablist" aria-label="PropTable">
+    <button class="tab" role="tab" data-tab="export" aria-selected="true">Export</button>
+    <button class="tab" role="tab" data-tab="checks" aria-selected="false">Checks</button>
+    <button class="tab" role="tab" data-tab="settings" aria-selected="false" id="settings-tab">Settings</button>
+    <span class="tab-ink" aria-hidden="true"></span>
   </nav>
 
-  <main>
-    <section id="export" class="panel">
-      <p class="empty" id="export-empty">Select a component to export.</p>
-      <div id="export-body" hidden>
-        <label class="field" id="component-field" hidden>
-          <span>Component</span>
-          <select id="component-select"></select>
-        </label>
-        <div id="summary" hidden></div>
-        <div class="segmented" role="radiogroup" aria-label="Format">
-          <button data-format="markdown" aria-pressed="true">Markdown</button>
-          <button data-format="json" aria-pressed="false">JSON</button>
-          <button data-format="typescript" aria-pressed="false">TypeScript</button>
+  <div class="dev-banner" id="dev-banner" hidden>
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 4.5 2 8l3.5 3.5M10.5 4.5 14 8l-3.5 3.5"></path></svg>
+    <span>Dev Mode · read only</span>
+  </div>
+
+  <!-- Empty / loading state, shared by Export and Checks -->
+  <section class="panel empty" id="empty" hidden>
+    <div class="empty-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 3 3-3 3-3-3zM6 9l3 3-3 3-3-3zM18 9l3 3-3 3-3-3zM12 15l3 3-3 3-3-3z"></path></svg>
+    </div>
+    <div class="empty-title" id="empty-title">Select a component</div>
+    <div class="empty-text" id="empty-text">Pick a component, component set, instance or PropTable table on the canvas to export or check it.</div>
+  </section>
+
+  <!-- Export -->
+  <section class="panel" id="export" role="tabpanel" hidden>
+    <div class="scroll body">
+      <div class="dropdown" id="dropdown">
+        <button class="trigger" id="trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+          <span class="comp-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 3 3-3 3-3-3zM6 9l3 3-3 3-3-3zM18 9l3 3-3 3-3-3zM12 15l3 3-3 3-3-3z"></path></svg>
+          </span>
+          <span class="comp-text">
+            <span class="comp-name" id="comp-name"></span>
+            <span class="comp-meta" id="comp-meta"></span>
+          </span>
+          <span class="count" id="comp-index" hidden></span>
+          <svg class="chev" id="chev" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 6 4 4 4-4"></path></svg>
+        </button>
+        <div class="menu" id="menu" role="listbox" aria-label="Selected components">
+          <div class="menu-head" id="menu-head"></div>
+          <div id="menu-items"></div>
         </div>
-        <textarea id="output" readonly spellcheck="false" aria-label="Export preview"></textarea>
-        <button class="primary" id="copy">Copy</button>
       </div>
-    </section>
 
-    <section id="checks" class="panel" hidden>
-      <div class="segmented" role="radiogroup" aria-label="Scope">
-        <button data-scope="selection" aria-pressed="true">Selection</button>
-        <button data-scope="page" aria-pressed="false">Page</button>
+      <div class="seg" role="radiogroup" aria-label="Format" data-seg="format">
+        <span class="seg-pill" aria-hidden="true"></span>
+        <button class="seg-btn" data-value="markdown" aria-pressed="false">Markdown</button>
+        <button class="seg-btn" data-value="json" aria-pressed="false">JSON</button>
+        <button class="seg-btn" data-value="typescript" aria-pressed="false">TypeScript</button>
       </div>
-      <div id="issues"></div>
-    </section>
 
-    <section id="settings" class="panel" hidden>
-      <form id="settings-form">
-        <fieldset>
-          <legend>Theme</legend>
-          <label class="field"><span>Mode</span>
-            <select name="theme"><option value="light">Light</option><option value="dark">Dark</option></select>
+      <div class="code-card">
+        <div class="code-head">
+          <span id="file-name"></span>
+          <span class="muted" id="line-count"></span>
+        </div>
+        <pre class="code scroll" id="code" tabindex="0" aria-label="Export preview"></pre>
+      </div>
+
+      <div class="summary" id="summary" hidden>
+        <div class="label">Properties</div>
+        <div class="card" id="summary-rows"></div>
+      </div>
+    </div>
+    <div class="footer">
+      <button class="btn-primary" id="copy" type="button"></button>
+    </div>
+  </section>
+
+  <!-- Checks -->
+  <section class="panel" id="checks" role="tabpanel" hidden>
+    <div class="scroll body">
+      <div class="seg" role="radiogroup" aria-label="Scope" data-seg="scope">
+        <span class="seg-pill" aria-hidden="true"></span>
+        <button class="seg-btn" data-value="selection" aria-pressed="true">Selection<span class="count" id="count-selection">0</span></button>
+        <button class="seg-btn" data-value="page" aria-pressed="false">Page<span class="count" id="count-page">–</span></button>
+      </div>
+      <div class="checks-bar">
+        <span class="muted" id="issue-summary"></span>
+        <button class="btn-ghost" id="refresh" type="button" hidden>Refresh</button>
+      </div>
+      <div class="groups" id="groups"></div>
+    </div>
+  </section>
+
+  <!-- Settings -->
+  <section class="panel" id="settings" role="tabpanel" hidden>
+    <div class="scroll body settings-body">
+      <section class="group">
+        <h2>Table appearance</h2>
+        <div class="card">
+          <div class="row tall">
+            <span class="row-label">Theme</span>
+            <div class="seg seg-sm" role="radiogroup" aria-label="Theme" data-seg="theme">
+              <span class="seg-pill" aria-hidden="true"></span>
+              <button class="seg-btn" data-value="light" aria-pressed="true">Light</button>
+              <button class="seg-btn" data-value="dark" aria-pressed="false">Dark</button>
+            </div>
+          </div>
+          <div class="row tall">
+            <span class="row-label">Accent</span>
+            <div class="swatches" id="swatches"></div>
+          </div>
+          <label class="row tall">
+            <span class="row-label">Font</span>
+            <input class="field" id="font" type="text" placeholder="Inter" spellcheck="false" />
           </label>
-          <label class="field"><span>Accent</span><input type="color" name="accent" /></label>
-          <label class="field"><span>Font</span><input type="text" name="font" placeholder="Inter" /></label>
-        </fieldset>
+        </div>
+      </section>
 
-        <fieldset>
-          <legend>Columns</legend>
-          <label class="check"><input type="checkbox" name="columns.type" /> Type</label>
-          <label class="check"><input type="checkbox" name="columns.default" /> Default / Options</label>
-          <label class="check"><input type="checkbox" name="columns.notes" /> Notes</label>
-        </fieldset>
+      <div id="toggle-groups"></div>
 
-        <fieldset>
-          <legend>Sections</legend>
-          <label class="check"><input type="checkbox" name="sections.nested" /> Nested properties</label>
-          <label class="check"><input type="checkbox" name="sections.variants" /> Variants</label>
-          <label class="check"><input type="checkbox" name="sections.previews" /> Variant previews</label>
-          <label class="check"><input type="checkbox" name="sections.tokens" /> Tokens</label>
-        </fieldset>
+      <section class="group">
+        <h2>Layout</h2>
+        <div class="card">
+          <div class="row tall">
+            <span class="row-label">Place new tables</span>
+            <div class="seg seg-sm" role="radiogroup" aria-label="Placement" data-seg="placement">
+              <span class="seg-pill" aria-hidden="true"></span>
+              <button class="seg-btn" data-value="right" aria-pressed="true">Right</button>
+              <button class="seg-btn" data-value="below" aria-pressed="false">Below</button>
+            </div>
+          </div>
+          <div class="order-wrap">
+            <span>Property order</span>
+            <ol class="order" id="type-order"></ol>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="footer settings-footer">
+      <span class="saved"><span class="dot" aria-hidden="true"></span>Saved to this file · applies on next update</span>
+      <button class="btn-ghost" id="reset" type="button">Reset</button>
+    </div>
+  </section>
 
-        <fieldset>
-          <legend>Marks</legend>
-          <label class="check"><input type="checkbox" name="changeMarks" /> Highlight changes since last update</label>
-          <label class="check"><input type="checkbox" name="lintMarks" /> Show lint warnings</label>
-        </fieldset>
-
-        <fieldset>
-          <legend>Layout</legend>
-          <label class="field"><span>Placement</span>
-            <select name="placement"><option value="right">Right of component</option><option value="below">Below component</option></select>
-          </label>
-          <div class="field"><span>Type order</span><ol id="type-order"></ol></div>
-        </fieldset>
-
-        <p class="hint">Settings are saved in this file and apply the next time a table is generated or updated.</p>
-        <button type="button" class="secondary" id="reset">Reset to defaults</button>
-      </form>
-    </section>
-  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3.5 8.5 3 3 6-7"></path></svg>
+    <span id="toast-text"></span>
+  </div>
+</div>
 <script>/*__JS__*/</script>
 </body>
 </html>
