@@ -1,15 +1,19 @@
 {
   "name": "proptable",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Figma plugin that generates component property tables on the canvas",
   "license": "MIT",
   "repository": "github:iroshandezilva/PropTable",
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc --watch"
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
+    "test": "vitest run",
+    "typecheck": "tsc"
   },
   "devDependencies": {
-    "typescript": "^5.3.0",
-    "@figma/plugin-typings": "^1.100.0"
+    "@figma/plugin-typings": "^1.140.0",
+    "esbuild": "^0.28.2",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.3"
   }
 }

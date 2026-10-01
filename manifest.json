@@ -3,9 +3,22 @@
   "id": "1607486611169964823",
   "api": "1.0.0",
   "main": "code.js",
-  "editorType": ["figma"],
+  "ui": "ui.html",
+  "editorType": ["figma", "dev"],
+  "capabilities": ["inspect"],
   "documentAccess": "dynamic-page",
   "networkAccess": {
     "allowedDomains": ["none"]
-  }
+  },
+  "menu": [
+    { "name": "Generate table", "command": "generate" },
+    { "name": "Update all tables on page", "command": "update-page" },
+    { "name": "Update all tables in file", "command": "update-file" },
+    { "name": "Create overview page", "command": "overview" },
+    { "separator": true },
+    { "name": "Open PropTable…", "command": "open" }
+  ],
+  "relaunchButtons": [
+    { "command": "generate", "name": "Update table" }
+  ]
 }
