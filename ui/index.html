@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<style>/*__CSS__*/</style>
+</head>
+<body>
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="export" aria-selected="true">Export</button>
+    <button role="tab" data-tab="checks">Checks</button>
+    <button role="tab" data-tab="settings" id="settings-tab">Settings</button>
+  </nav>
+
+  <main>
+    <section id="export" class="panel">
+      <p class="empty" id="export-empty">Select a component to export.</p>
+      <div id="export-body" hidden>
+        <label class="field" id="component-field" hidden>
+          <span>Component</span>
+          <select id="component-select"></select>
+        </label>
+        <div id="summary" hidden></div>
+        <div class="segmented" role="radiogroup" aria-label="Format">
+          <button data-format="markdown" aria-pressed="true">Markdown</button>
+          <button data-format="json" aria-pressed="false">JSON</button>
+          <button data-format="typescript" aria-pressed="false">TypeScript</button>
+        </div>
+        <textarea id="output" readonly spellcheck="false" aria-label="Export preview"></textarea>
+        <button class="primary" id="copy">Copy</button>
+      </div>
+    </section>
+
+    <section id="checks" class="panel" hidden>
+      <div class="segmented" role="radiogroup" aria-label="Scope">
+        <button data-scope="selection" aria-pressed="true">Selection</button>
+        <button data-scope="page" aria-pressed="false">Page</button>
+      </div>
+      <div id="issues"></div>
+    </section>
+
+    <section id="settings" class="panel" hidden>
+      <form id="settings-form">
+        <fieldset>
+          <legend>Theme</legend>
+          <label class="field"><span>Mode</span>
+            <select name="theme"><option value="light">Light</option><option value="dark">Dark</option></select>
+          </label>
+          <label class="field"><span>Accent</span><input type="color" name="accent" /></label>
+          <label class="field"><span>Font</span><input type="text" name="font" placeholder="Inter" /></label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Columns</legend>
+          <label class="check"><input type="checkbox" name="columns.type" /> Type</label>
+          <label class="check"><input type="checkbox" name="columns.default" /> Default / Options</label>
+          <label class="check"><input type="checkbox" name="columns.notes" /> Notes</label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Sections</legend>
+          <label class="check"><input type="checkbox" name="sections.nested" /> Nested properties</label>
+          <label class="check"><input type="checkbox" name="sections.variants" /> Variants</label>
+          <label class="check"><input type="checkbox" name="sections.previews" /> Variant previews</label>
+          <label class="check"><input type="checkbox" name="sections.tokens" /> Tokens</label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Marks</legend>
+          <label class="check"><input type="checkbox" name="changeMarks" /> Highlight changes since last update</label>
+          <label class="check"><input type="checkbox" name="lintMarks" /> Show lint warnings</label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Layout</legend>
+          <label class="field"><span>Placement</span>
+            <select name="placement"><option value="right">Right of component</option><option value="below">Below component</option></select>
+          </label>
+          <div class="field"><span>Type order</span><ol id="type-order"></ol></div>
+        </fieldset>
+
+        <p class="hint">Settings are saved in this file and apply the next time a table is generated or updated.</p>
+        <button type="button" class="secondary" id="reset">Reset to defaults</button>
+      </form>
+    </section>
+  </main>
+<script>/*__JS__*/</script>
+</body>
+</html>

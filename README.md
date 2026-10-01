@@ -1,34 +1,57 @@
 # PropTable
 
-**Generate component property tables right on your Figma canvas.**
+**Component documentation, generated on your Figma canvas.**
 
-Select a component, component set, or instance, run PropTable, and get a clean reference table of every property: variants, booleans, text, and instance swaps, each with its type and default value.
+Select a component, component set, or instance, run PropTable, and get a reference table of every property: variants, booleans, text, instance swaps and slots, with types, defaults, notes, variant descriptions, previews and the tokens it uses.
 
 **[Install from Figma Community →](https://www.figma.com/community/plugin/1607486611169964823/proptable)**
 
 ## Features
 
-- **All property types.** Variants, booleans, text, and instance swaps.
-- **Variant options as tags.** Every option is listed, with the default one marked.
-- **Description and docs link.** Pulls in the component's description and documentation link.
-- **Updates in place.** Run it again on the same component and the existing table is replaced where it sits.
+- **Every property type.** Variants as tags with the default marked, booleans as toggles, text defaults, and instance swaps with their preferred components.
+- **Nested properties.** Properties exposed from nested instances are listed under the instance they belong to.
+- **Variant descriptions.** Each variant's own description and doc link, with a small preview image.
+- **Notes.** Type notes straight into the table. They're kept when the table is rebuilt, even when a property is renamed.
+- **Change marks.** Rebuilding marks new and changed properties and lists removed ones.
+- **Lint warnings.** Flags missing descriptions and doc links, mixed variant casing, unused booleans, empty text defaults, and duplicate or badly spaced names.
+- **Tokens.** Lists the variables the component uses, grouped by collection.
+- **Export.** Copy any component as Markdown, JSON or TypeScript props.
+- **Dev Mode.** Developers can open the export view while inspecting.
+- **Your style.** Light or dark tables, accent colour, font, columns, sections, type order and placement, saved per file.
 
 ## How to use
 
-1. Select a component, component set, or instance.
-2. Run **Plugins → PropTable**.
-3. The table appears next to your selection. Run it again any time to refresh it.
+Select one or more components, component sets, instances or existing tables, then pick a command from **Plugins → PropTable**:
+
+| Command | What it does |
+| --- | --- |
+| **Generate table** | Creates or updates a table for each selected component |
+| **Update all tables on page / in file** | Rebuilds every PropTable table in place |
+| **Create overview page** | Adds a "PropTable Overview" page listing every component and its documentation status |
+| **Open PropTable…** | Opens the window with export, checks and settings |
+
+Once a component has a table, an **Update table** button appears in the right-hand panel when you select either one.
 
 ## Development
 
 ```bash
 npm install
-npm run build   # or: npm run watch
+npm run build      # or: npm run watch
+npm test           # unit tests for the model logic
+npm run typecheck
 ```
 
 Then in the Figma desktop app go to **Plugins → Development → Import plugin from manifest…** and pick `manifest.json`.
 
-All the plugin code is in [`code.ts`](code.ts), which compiles to `code.js`.
+| Folder | Contents |
+| --- | --- |
+| `src/model/` | Pure logic with no Figma API: data model, extraction, change detection, lint and export. Unit-tested in `tests/` |
+| `src/figmaAdapter.ts` | Reads Figma nodes into the model |
+| `src/render/` | Draws tables and the overview on the canvas |
+| `src/commands/` | Menu commands and the window bridge |
+| `ui/` | Plugin window, inlined into `ui.html` by `build.mjs` |
+
+The manual test checklist is in [docs/testing.md](docs/testing.md).
 
 ## Credits
 
